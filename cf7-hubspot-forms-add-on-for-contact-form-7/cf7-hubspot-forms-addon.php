@@ -23,7 +23,7 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 		return ($append ? $base_url . $append : $base_url);
 
 	}
-	
+
 	function cf7hsfi_root_dir( $append = false ) {
 
 		$base_dir = plugin_dir_path( __FILE__ );
@@ -36,16 +36,16 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 
 	function cf7hsfi_enqueue( $hook ) {
 
-    if ( !strpos( $hook, 'wpcf7' ) )
-    	return;
+		if ( !strpos( $hook, 'wpcf7' ) )
+			return;
 
-    wp_enqueue_style( 'cf7hsfi-styles',
-    	cf7hsfi_root_url('assets/css/styles.css'),
-    	false,
-    	CF7HSFI_VERSION );
+		wp_enqueue_style( 'cf7hsfi-styles',
+			cf7hsfi_root_url('assets/css/styles.css'),
+			false,
+			CF7HSFI_VERSION );
 
 		wp_enqueue_script( 'cf7hsfi-scripts',
-    	cf7hsfi_root_url('assets/js/scripts.js'),
+			cf7hsfi_root_url('assets/js/scripts.js'),
 			array('jquery'),
 			CF7HSFI_VERSION );
 
@@ -60,22 +60,22 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 				'callback' => 'cf7hsfi_admin_panel_content'
 			)
 		);
-		
+
 		$panels = array_merge($panels, $new_page);
-		
+
 		return $panels;
-		
+
 	}
 	add_filter( 'wpcf7_editor_panels', 'cf7hsfi_admin_panel' );
 
 	function cf7hsfi_admin_panel_content( $cf7 ) {
-		
+
 		$post_id = sanitize_text_field($_GET['post']);
 
-		$api_key = get_option("_cf7hsfi_api_key");
-		$deal_name = get_option("_cf7hsfi_deal_name");
-		$deal_price = get_option("_cf7hsfi_deal_price");
-		$form_fields_str = get_option("_cf7hsfi_form_fields");
+		$api_key = get_option($post_id . "_cf7hsfi_api_key");
+		$deal_name = get_option($post_id . "_cf7hsfi_deal_name");
+		$deal_price = get_option($post_id . "_cf7hsfi_deal_price");
+		$form_fields_str = get_option($post_id . "_cf7hsfi_form_fields");
 		$form_fields = $form_fields_str ? unserialize($form_fields_str) : false;
 		$debug_log = get_post_meta($post_id, "_cf7hsfi_debug_log", true);
 
@@ -99,7 +99,7 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 				$search = array_keys($search_replace);
 				$replace = array_values($search_replace);
 
-				if($count >  1) $replace[0] = $replace[3] = '';				
+				if($count >  1) $replace[0] = $replace[3] = '';
 				if($count == 1) $replace[4] = '';
 
 				$form_fields_html .= str_replace($search, $replace, $template);
@@ -173,6 +173,8 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 
 	function cf7hsfi_admin_save_form( $cf7 ) {
 
+		$post_id = sanitize_text_field($_GET['post']);
+
 		$form_fields = array();
 
 		foreach ($_POST['cf7hsfi_hs_field'] as $key => $value) {
@@ -183,14 +185,14 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 
 		}
 
-		delete_option( '_cf7hsfi_api_key');
-		delete_option( '_cf7hsfi_deal_name');
-		delete_option( '_cf7hsfi_deal_price');
-		delete_option( '_cf7hsfi_form_fields');
-		add_option( '_cf7hsfi_api_key',  $_POST['cf7hsfi_api_key'], '', 'yes' );
-		add_option( '_cf7hsfi_deal_name',  $_POST['cf7hsfi_deal_name'], '', 'yes' );
-		add_option( '_cf7hsfi_deal_price',  $_POST['cf7hsfi_deal_price'], '', 'yes' );
-		add_option( '_cf7hsfi_form_fields',  serialize($form_fields), '', 'yes' );
+		delete_option( $post_id . '_cf7hsfi_api_key');
+		delete_option( $post_id . '_cf7hsfi_deal_name');
+		delete_option( $post_id . '_cf7hsfi_deal_price');
+		delete_option( $post_id . '_cf7hsfi_form_fields');
+		add_option( $post_id . '_cf7hsfi_api_key',  $_POST['cf7hsfi_api_key'], '', 'yes' );
+		add_option( $post_id . '_cf7hsfi_deal_name',  $_POST['cf7hsfi_deal_name'], '', 'yes' );
+		add_option( $post_id . '_cf7hsfi_deal_price',  $_POST['cf7hsfi_deal_price'], '', 'yes' );
+		add_option( $post_id . '_cf7hsfi_form_fields',  serialize($form_fields), '', 'yes' );
 
 	}
 	add_action('wpcf7_save_contact_form', 'cf7hsfi_admin_save_form');
@@ -198,14 +200,16 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 
 	function cf7hsfi_frontend_submit_form( $wpcf7_data ) {
 
-		$api_key = get_option("_cf7hsfi_api_key");
-		$deal_name = get_option("_cf7hsfi_deal_name");
-		$form_fields_str = get_option("_cf7hsfi_form_fields");
+		$post_id = $wpcf7_data->id;
+		$api_key = get_option($post_id . "_cf7hsfi_api_key");
+		$deal_name = get_option($post_id . "_cf7hsfi_deal_name");
+		$deal_price = get_option($post_id . "_cf7hsfi_deal_price");
+		$form_fields_str = get_option($post_id . "_cf7hsfi_form_fields");
 		$form_fields = $form_fields_str ? unserialize($form_fields_str) : false;
 
-        if( $form_fields ) {
+		if( $form_fields ) {
 
-	        $properties = array();
+			$properties = array();
 			foreach ($form_fields as $key => $value) {
 
 				array_push($properties, array('property' => $value,
@@ -213,11 +217,11 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 
 			}
 
-			addContact($api_key, array('properties'=>$properties), $deal_name);
-        }
+			addContact($api_key, array('properties'=>$properties), $deal_name, $deal_price);
+		}
 	}
 
-	function addContact($apiKey, array $properties, $deal_name) {
+	function addContact($apiKey, array $properties, $deal_name, $deal_price) {
 
 		$post_json = json_encode($properties);
 
@@ -227,7 +231,7 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 
 		if (isset($response["vid"])) {
 
-			addDeal($response["vid"],$deal_name, $apiKey);
+			addDeal($response["vid"],$deal_name, $apiKey, $deal_price);
 		}
 	}
 
@@ -235,18 +239,16 @@ if ( is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
 
 		$endpoint = 'https://api.hubapi.com/deals/v1/deal?hapikey=' . $apiKey;
 
-		postRequest($endpoint, generateDealProperties($contactId, $dealName, $apiKey));
+		postRequest($endpoint, generateDealProperties($contactId, $dealName, $apiKey, $deal_price));
 	}
 
-	function generateDealProperties($contactId, $dealName, $apiKey) {
+	function generateDealProperties($contactId, $dealName, $apiKey, $deal_price) {
 		$properties = [
 			[
 				"value"=> $dealName,
 				"name"=> "dealname"
 			]
 		];
-
-		$deal_price = get_option("_cf7hsfi_deal_price");
 
 		$stage = returnFirsPipeline($apiKey);
 
